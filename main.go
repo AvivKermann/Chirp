@@ -38,10 +38,15 @@ func main() {
 	fsHandler := cfg.MiddlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot))))
 	router.Handle("/app", fsHandler)
 	router.Handle("/app/*", fsHandler)
+
 	apiRouter.Get("/healthz", handlerHealthz)
 	apiRouter.Get("/reset", cfg.handlerReset)
 	apiRouter.Get("/chirps", cfg.handlerGetChirps)
+	apiRouter.Get("/chirps/{chirpId}", cfg.handlerGetSingleChirp)
 	apiRouter.Post("/chirps", cfg.handlerCreateChirp)
+	apiRouter.Post("/users", cfg.handlerCreateUser)
+	apiRouter.Post("/login", cfg.handlerLogin)
+
 	adminRouter.Get("/metrics", cfg.handlerMetrics)
 
 	fmt.Printf("started local host on http://localhost:%s\n", port)

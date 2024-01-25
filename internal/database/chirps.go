@@ -21,6 +21,22 @@ func (db *DB) GetChirps() ([]models.Chirp, error) {
 
 }
 
+func (db *DB) GetSingleChirp(chirpId int) (models.Chirp, bool) {
+	dbContent, err := db.loadDB()
+
+	db.mu.RLock()
+	defer db.mu.RUnlock()
+	if err != nil {
+		return models.Chirp{}, false
+	}
+
+	chirp, exist := dbContent.Chirps[chirpId]
+	if !exist {
+		return models.Chirp{}, exist
+	}
+
+	return chirp, exist
+}
 func (db *DB) CreateChirp(content string) (models.Chirp, error) {
 	dbContent, err := db.loadDB()
 

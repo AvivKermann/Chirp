@@ -12,6 +12,7 @@ import (
 
 type DBStructure struct {
 	Chirps map[int]models.Chirp `json:"chirps"`
+	Users  map[int]models.User  `json:"user"`
 }
 type DB struct {
 	path string
@@ -22,6 +23,7 @@ func NewDB(path string) (*DB, error) {
 
 	dbContent := DBStructure{
 		Chirps: map[int]models.Chirp{},
+		Users:  map[int]models.User{},
 	}
 	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
 		_, err := os.Create(path)
