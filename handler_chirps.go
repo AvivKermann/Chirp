@@ -14,11 +14,6 @@ type parameters struct {
 	Body string `json:"body"`
 }
 
-type response struct {
-	Body string `json:"body"`
-	ID   int    `json:"id"`
-}
-
 func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	params := parameters{}

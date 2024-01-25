@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/AvivKermann/Chirpy/internal/database"
 	"github.com/go-chi/chi/v5"
+	"github.com/joho/godotenv"
 )
 
 const port = "8080"
@@ -16,14 +18,18 @@ const dbFilePath = "./database.json"
 type apiConfig struct {
 	fileServerHits int
 	DB             *database.DB
+	jwtSecret      string
 }
 
 func main() {
 	router := chi.NewRouter()
 	apiRouter := chi.NewRouter()
 	adminRouter := chi.NewRouter()
+
 	router.Mount("/api", apiRouter)
 	router.Mount("/admin", adminRouter)
+
+	godotenv.Load()
 
 	db, err := database.NewDB(dbFilePath)
 	if err != nil {
@@ -33,6 +39,7 @@ func main() {
 	cfg := apiConfig{
 		fileServerHits: 0,
 		DB:             db,
+		jwtSecret:      os.Getenv("JWT_SECRET"),
 	}
 
 	fsHandler := cfg.MiddlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot))))
