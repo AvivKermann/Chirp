@@ -2,6 +2,7 @@ package database
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/AvivKermann/Chirpy/models"
 	"golang.org/x/crypto/bcrypt"
@@ -59,6 +60,25 @@ func (db *DB) UserLogin(email, password string) (models.ResponseUser, error) {
 
 }
 
+func (db *DB) UpdateUser(email, password string, user models.User) (models.ResponseUser, error) {
+	dbContent, err := db.loadDB()
+	if err != nil {
+		return models.ResponseUser{}, err
+	}
+	hashedPassword, err := HashPassword(password)
+	if err != nil {
+		return models.ResponseUser{}, err
+	}
+
+	user.Email = email
+	user.Password = hashedPassword
+
+	dbContent.Users[user.ID] = user
+
+	go db.writeDB(dbContent)
+
+	return user.ResponseUser, nil
+}
 func (db *DB) GetUserByEmail(email string) (models.User, error) {
 	dbContent, err := db.loadDB()
 	if err != nil {
@@ -73,6 +93,20 @@ func (db *DB) GetUserByEmail(email string) (models.User, error) {
 
 }
 
+func (db *DB) GetUserById(userId int) (models.User, error) {
+	dbContent, err := db.loadDB()
+
+	if err != nil {
+		return models.User{}, err
+	}
+	user, ok := dbContent.Users[userId]
+	if !ok {
+		return models.User{}, errors.New("user not found")
+	}
+
+	return user, nil
+}
+
 func ValidatePassword(hashedPassword []byte, password string) bool {
 	err := bcrypt.CompareHashAndPassword(hashedPassword, []byte(password))
 	return err == nil
@@ -85,4 +119,8 @@ func HashPassword(password string) ([]byte, error) {
 	}
 
 	return hashedPassword, nil
+}
+func StripPrefix(header string) string {
+	token := strings.TrimPrefix(header, "Bearer ")
+	return token
 }

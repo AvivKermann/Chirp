@@ -1,7 +1,9 @@
 package jwtauth
 
 import (
+	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -23,6 +25,36 @@ func GenerateJwtToken(secretKey string, userId int, userExpiresAt *int) (string,
 
 	return signedToken, nil
 
+}
+func GetIdFromToken(token, secretKey string) (int, error) {
+
+	userToken, valid := IsTokenValid(token, secretKey)
+	if !valid {
+		return 0, errors.New("invalid token")
+	}
+	stringId, err := userToken.Claims.GetSubject()
+	if err != nil {
+		return 0, err
+	}
+
+	intId, err := strconv.Atoi(stringId)
+	if err != nil {
+		return 0, err
+	}
+	return intId, nil
+
+}
+
+func IsTokenValid(token, secretKey string) (*jwt.Token, bool) {
+
+	userToken, err := jwt.ParseWithClaims(token, &jwt.RegisteredClaims{}, func(token *jwt.Token) (interface{}, error) {
+		return []byte(secretKey), nil
+	})
+	if err != nil {
+		return &jwt.Token{}, false
+	}
+
+	return userToken, true
 }
 
 func GetExpiresAt(userExpireInSeconds *int) time.Duration {
