@@ -11,8 +11,9 @@ import (
 )
 
 type DBStructure struct {
-	Chirps map[int]models.Chirp `json:"chirps"`
-	Users  map[int]models.User  `json:"user"`
+	Chirps        map[int]models.Chirp           `json:"chirps"`
+	Users         map[int]models.User            `json:"user"`
+	RefreshTokens map[string]models.RefreshToken `json:"refresh_tokens"`
 }
 type DB struct {
 	path string
@@ -22,8 +23,9 @@ type DB struct {
 func NewDB(path string) (*DB, error) {
 
 	dbContent := DBStructure{
-		Chirps: map[int]models.Chirp{},
-		Users:  map[int]models.User{},
+		Chirps:        map[int]models.Chirp{},
+		Users:         map[int]models.User{},
+		RefreshTokens: map[string]models.RefreshToken{},
 	}
 	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
 		_, err := os.Create(path)

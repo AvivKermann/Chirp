@@ -9,12 +9,19 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func GenerateJwtToken(secretKey string, userId int, userExpiresAt *int) (string, error) {
-	expiresAt := GetExpiresAt(userExpiresAt)
+func GenerateJwtToken(tokenType, secretKey string, userId int) (string, error) {
+	const RefreshDefaultExpireTimeDay = 60
+	const AccessDefaultExpireTimeHour = 1
+	expiresAt := AccessDefaultExpireTimeHour
+
+	if tokenType == "refresh" {
+		expiresAt = RefreshDefaultExpireTimeDay * 24
+	}
+
 	claims := jwt.RegisteredClaims{
-		Issuer:    fmt.Sprint("chirpy"),
+		Issuer:    "chirpy-" + tokenType,
 		IssuedAt:  jwt.NewNumericDate(time.Now().UTC()),
-		ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(expiresAt)),
+		ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(time.Hour * time.Duration(expiresAt))),
 		Subject:   fmt.Sprint(userId),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -45,6 +52,19 @@ func GetIdFromToken(token, secretKey string) (int, error) {
 
 }
 
+func GetIssuerFromToken(token, secretKey string) (string, error) {
+	userToken, valid := IsTokenValid(token, secretKey)
+	if !valid {
+		return "", errors.New("invalid token")
+	}
+	issuer, err := userToken.Claims.GetIssuer()
+	if err != nil {
+		return "", err
+	}
+
+	return issuer, nil
+}
+
 func IsTokenValid(token, secretKey string) (*jwt.Token, bool) {
 
 	userToken, err := jwt.ParseWithClaims(token, &jwt.RegisteredClaims{}, func(token *jwt.Token) (interface{}, error) {
@@ -57,19 +77,16 @@ func IsTokenValid(token, secretKey string) (*jwt.Token, bool) {
 	return userToken, true
 }
 
-func GetExpiresAt(userExpireInSeconds *int) time.Duration {
-	DefaultExpireTimeSeconds := time.Second * 60 * 24
-
-	if userExpireInSeconds == nil {
-		return DefaultExpireTimeSeconds
-	}
-	if *userExpireInSeconds > int(DefaultExpireTimeSeconds) {
-		return DefaultExpireTimeSeconds
-	}
-	if *userExpireInSeconds < 0 {
-		return DefaultExpireTimeSeconds
+func ValidateRefreshToken(refreshToken, secretKey string) bool {
+	token, isValidToken := IsTokenValid(refreshToken, secretKey)
+	if !isValidToken {
+		return false
 	}
 
-	return time.Duration(*userExpireInSeconds)
+	if tokenType, err := token.Claims.GetIssuer(); tokenType != "chirpy-refresh" || err != nil {
+		return false
+	}
+
+	return true
 
 }

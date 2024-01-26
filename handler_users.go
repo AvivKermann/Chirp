@@ -45,18 +45,31 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		jsonResponse.ResponedWithError(w, http.StatusUnauthorized, err.Error())
 		return
 	}
-	token, err := jwtauth.GenerateJwtToken(cfg.jwtSecret, loggedUser.ID, params.ExpireInSeconds)
+	Accesstoken, err := jwtauth.GenerateJwtToken("access", cfg.jwtSecret, loggedUser.ID)
+
 	if err != nil {
-		jsonResponse.ResponedWithError(w, http.StatusUnauthorized, "cannot create token")
+		jsonResponse.ResponedWithError(w, http.StatusUnauthorized, "cannot create access token")
 		return
 	}
+	refreshToken, err := jwtauth.GenerateJwtToken("refresh", cfg.jwtSecret, loggedUser.ID)
+	if err != nil {
+		jsonResponse.ResponedWithError(w, http.StatusUnauthorized, "cannot create refresh token")
+		return
+	}
+	err = cfg.DB.CreateNewRefreshToken(refreshToken)
 
+	if err != nil {
+		jsonResponse.ResponedWithError(w, http.StatusInternalServerError, "cannot insert refresh token")
+		return
+	}
 	jsonResponse.ResponedWithJson(w, http.StatusOK, struct {
 		models.ResponseUser
-		Token string `json:"token"`
+		Token        string `json:"token"`
+		RefreshToken string `json:"refresh_token"`
 	}{
 		ResponseUser: loggedUser,
-		Token:        token,
+		Token:        Accesstoken,
+		RefreshToken: refreshToken,
 	})
 
 }
@@ -70,6 +83,17 @@ func (cfg *apiConfig) handlerUpdateUser(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	token := database.StripPrefix(r.Header.Get("Authorization"))
+
+	tokenType, err := jwtauth.GetIssuerFromToken(token, cfg.jwtSecret)
+	if err != nil {
+		jsonResponse.ResponedWithError(w, http.StatusUnauthorized, "invalid token")
+		return
+	}
+
+	if tokenType == "chirpy-refresh" {
+		jsonResponse.ResponedWithError(w, http.StatusUnauthorized, "invalid action for refresh token")
+		return
+	}
 
 	userId, err := jwtauth.GetIdFromToken(token, cfg.jwtSecret)
 	if err != nil {
