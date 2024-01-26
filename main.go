@@ -54,6 +54,7 @@ func main() {
 	apiRouter.Post("/users", cfg.handlerCreateUser)
 	apiRouter.Post("/login", cfg.handlerLogin)
 	apiRouter.Post("/refresh", cfg.handlerRefresh)
+	apiRouter.Post("/revoke", cfg.handlerRevoke)
 	apiRouter.Put("/users", cfg.handlerUpdateUser)
 
 	adminRouter.Get("/metrics", cfg.handlerMetrics)

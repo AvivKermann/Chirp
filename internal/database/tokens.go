@@ -22,6 +22,20 @@ func (db *DB) CreateNewRefreshToken(token string) error {
 	return nil
 }
 
+func (db *DB) RevokeRefreshToken(token string) bool {
+	dbContent, err := db.loadDB()
+
+	if err != nil {
+		return false
+	}
+
+	revokedToken := dbContent.RefreshTokens[token]
+	revokedToken.IsActive = false
+	dbContent.RefreshTokens[token] = revokedToken
+	db.writeDB(dbContent)
+	return true
+}
+
 func (db *DB) RefreshTokenExistAndActive(token string) bool {
 	dbContent, err := db.loadDB()
 	if err != nil {
