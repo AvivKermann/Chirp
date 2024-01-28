@@ -6,7 +6,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/AvivKermann/Chirpy/internal/database"
 	"github.com/AvivKermann/Chirpy/internal/jsonResponse"
+	"github.com/AvivKermann/Chirpy/internal/jwtauth"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -17,6 +19,7 @@ type parameters struct {
 func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	params := parameters{}
+	token := database.StripPrefix(r.Header.Get("Authorization"))
 
 	err := decoder.Decode(&params)
 	if err != nil {
@@ -31,7 +34,13 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	cleanedContent := getCleanedBody(params.Body)
-	newChirp, err := cfg.DB.CreateChirp(cleanedContent)
+
+	userId, err := jwtauth.GetIdFromToken(token, cfg.jwtSecret)
+	if err != nil {
+		jsonResponse.ResponedWithError(w, http.StatusUnauthorized, "invalid token")
+	}
+
+	newChirp, err := cfg.DB.CreateChirp(cleanedContent, userId)
 
 	if err != nil {
 		jsonResponse.ResponedWithError(w, http.StatusInternalServerError, err.Error())

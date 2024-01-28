@@ -37,7 +37,7 @@ func (db *DB) GetSingleChirp(chirpId int) (models.Chirp, bool) {
 
 	return chirp, exist
 }
-func (db *DB) CreateChirp(content string) (models.Chirp, error) {
+func (db *DB) CreateChirp(content string, userId int) (models.Chirp, error) {
 	dbContent, err := db.loadDB()
 
 	if err != nil {
@@ -46,8 +46,9 @@ func (db *DB) CreateChirp(content string) (models.Chirp, error) {
 
 	index := len(dbContent.Chirps) + 1
 	newChirp := models.Chirp{
-		ID:   index,
-		Body: content,
+		ID:       index,
+		Body:     content,
+		AuthorID: userId,
 	}
 
 	dbContent.Chirps[index] = newChirp
