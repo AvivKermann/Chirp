@@ -50,6 +50,23 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request)
 }
 
 func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, r *http.Request) {
+	strAuthorId := r.URL.Query().Get("author_id")
+	if strAuthorId != "" {
+		authorId, err := strconv.Atoi(strAuthorId)
+		if err != nil {
+			jsonResponse.ResponedWithError(w, http.StatusBadRequest, "invalid id")
+			return
+		}
+		chirps, err := cfg.DB.GetChirpsByAuthor(authorId)
+		if err != nil {
+			jsonResponse.ResponedWithError(w, http.StatusBadRequest, "invalid id")
+			return
+		}
+		jsonResponse.ResponedWithJson(w, http.StatusOK, chirps)
+		return
+
+	}
+
 	chrips, err := cfg.DB.GetChirps()
 	if err != nil {
 		jsonResponse.ResponedWithError(w, http.StatusNotFound, err.Error())

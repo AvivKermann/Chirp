@@ -1,6 +1,8 @@
 package database
 
-import "github.com/AvivKermann/Chirpy/models"
+import (
+	"github.com/AvivKermann/Chirpy/models"
+)
 
 func (db *DB) GetChirps() ([]models.Chirp, error) {
 	dbContent, err := db.loadDB()
@@ -19,6 +21,23 @@ func (db *DB) GetChirps() ([]models.Chirp, error) {
 
 	return chirps, nil
 
+}
+func (db *DB) GetChirpsByAuthor(authorId int) ([]models.Chirp, error) {
+	dbContent, err := db.loadDB()
+
+	db.mu.RLock()
+	defer db.mu.RUnlock()
+
+	chirps := []models.Chirp{}
+	if err != nil {
+		return chirps, err
+	}
+	for _, chirp := range dbContent.Chirps {
+		if chirp.AuthorID == authorId {
+			chirps = append(chirps, chirp)
+		}
+	}
+	return chirps, nil
 }
 
 func (db *DB) GetSingleChirp(chirpId int) (models.Chirp, bool) {

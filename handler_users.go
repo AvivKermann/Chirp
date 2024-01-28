@@ -118,6 +118,13 @@ func (cfg *apiConfig) handlerUpdateUser(w http.ResponseWriter, r *http.Request) 
 }
 func (cfg *apiConfig) handlerUserSubscribe(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
+	token := r.Header.Get("Authorization")
+	requestKey := database.StripApiPrefix(token)
+	if requestKey != cfg.apiKey {
+		jsonResponse.ResponedWithError(w, http.StatusUnauthorized, "invalid api key")
+		return
+	}
+
 	params := models.WebhooksParameters{}
 	err := decoder.Decode(&params)
 	if err != nil {

@@ -19,17 +19,17 @@ type apiConfig struct {
 	fileServerHits int
 	DB             *database.DB
 	jwtSecret      string
+	apiKey         string
 }
 
 func main() {
+	godotenv.Load()
 	router := chi.NewRouter()
 	apiRouter := chi.NewRouter()
 	adminRouter := chi.NewRouter()
 
 	router.Mount("/api", apiRouter)
 	router.Mount("/admin", adminRouter)
-
-	godotenv.Load()
 
 	db, err := database.NewDB(dbFilePath)
 	if err != nil {
@@ -40,8 +40,8 @@ func main() {
 		fileServerHits: 0,
 		DB:             db,
 		jwtSecret:      os.Getenv("JWT_SECRET"),
+		apiKey:         os.Getenv("API_KEY"),
 	}
-
 	fsHandler := cfg.MiddlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot))))
 	router.Handle("/app", fsHandler)
 	router.Handle("/app/*", fsHandler)

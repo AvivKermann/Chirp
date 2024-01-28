@@ -158,3 +158,8 @@ func StripPrefix(header string) string {
 	token := strings.TrimPrefix(header, "Bearer ")
 	return token
 }
+
+func StripApiPrefix(header string) string {
+	token := strings.TrimPrefix(header, "ApiKey ")
+	return token
+}
