@@ -37,6 +37,19 @@ func (db *DB) GetSingleChirp(chirpId int) (models.Chirp, bool) {
 
 	return chirp, exist
 }
+func (db *DB) DeleteSingleChirp(chirpId int) bool {
+	dbContent, err := db.loadDB()
+
+	if err != nil {
+		return false
+	}
+
+	delete(dbContent.Chirps, chirpId)
+
+	db.writeDB(dbContent)
+	return true
+}
+
 func (db *DB) CreateChirp(content string, userId int) (models.Chirp, error) {
 	dbContent, err := db.loadDB()
 

@@ -9,6 +9,7 @@ import (
 	"github.com/AvivKermann/Chirpy/internal/database"
 	"github.com/AvivKermann/Chirpy/internal/jsonResponse"
 	"github.com/AvivKermann/Chirpy/internal/jwtauth"
+	"github.com/AvivKermann/Chirpy/models"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -63,6 +64,7 @@ func (cfg *apiConfig) handlerGetSingleChirp(w http.ResponseWriter, r *http.Reque
 
 	if err != nil {
 		jsonResponse.ResponedWithError(w, http.StatusBadRequest, err.Error())
+		return
 	}
 	chirp, exists := cfg.DB.GetSingleChirp(chirpId)
 
@@ -72,6 +74,47 @@ func (cfg *apiConfig) handlerGetSingleChirp(w http.ResponseWriter, r *http.Reque
 	}
 	jsonResponse.ResponedWithJson(w, http.StatusOK, chirp)
 
+}
+
+func (cfg *apiConfig) handlerDeleteChirp(w http.ResponseWriter, r *http.Request) {
+	strChirpId := chi.URLParam(r, "chirpId")
+	chirpId, err := strconv.Atoi(strChirpId)
+	token := database.StripPrefix(r.Header.Get("Authorization"))
+	if err != nil {
+		jsonResponse.ResponedWithError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	chirp, exist := cfg.DB.GetSingleChirp(chirpId)
+
+	if !exist {
+		jsonResponse.ResponedWithError(w, http.StatusNotFound, "chirp dosent exist")
+	}
+
+	userId, err := jwtauth.GetIdFromToken(token, cfg.jwtSecret)
+
+	if err != nil {
+		jsonResponse.ResponedWithError(w, http.StatusBadRequest, "not a user")
+		return
+	}
+	_, err = jwtauth.GetIdFromToken(token, cfg.jwtSecret)
+
+	if err != nil {
+		jsonResponse.ResponedWithError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	isOwner := isChirpAuthor(chirp, userId)
+	if !isOwner {
+		jsonResponse.ResponedWithError(w, http.StatusForbidden, "cannot delete chirp by other users")
+		return
+	}
+	isDeleted := cfg.DB.DeleteSingleChirp(chirpId)
+	if !isDeleted {
+		jsonResponse.ResponedWithError(w, http.StatusBadRequest, "chirp cannot be deleted")
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func getCleanedBody(chirp string) string {
@@ -100,4 +143,12 @@ func validateChirp(chirp string) bool {
 	}
 	return true
 
+}
+
+func isChirpAuthor(chirp models.Chirp, userId int) bool {
+	if userId == chirp.AuthorID {
+		return true
+	}
+
+	return false
 }
