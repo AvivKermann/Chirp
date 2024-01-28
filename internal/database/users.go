@@ -30,8 +30,9 @@ func (db *DB) CreateUser(email, password string) (models.ResponseUser, error) {
 
 	newUser := models.User{
 		ResponseUser: models.ResponseUser{
-			Email: email,
-			ID:    index,
+			Email:       email,
+			ID:          index,
+			IsChirpyRed: false,
 		},
 		Password: hashedPassword,
 	}
@@ -79,6 +80,39 @@ func (db *DB) UpdateUser(email, password string, user models.User) (models.Respo
 
 	return user.ResponseUser, nil
 }
+func (db *DB) MakeUserChirpyRed(userId int) bool {
+	dbContent, err := db.loadDB()
+	if err != nil {
+		return false
+	}
+
+	user := dbContent.Users[userId]
+
+	user.IsChirpyRed = true
+	dbContent.Users[userId] = user
+	err = db.writeDB(dbContent)
+
+	return err == nil
+}
+
+func (db *DB) CancelUserChirpyRed(userId int) bool {
+	dbContent, err := db.loadDB()
+	if err != nil {
+		return false
+	}
+
+	user := dbContent.Users[userId]
+	user.IsChirpyRed = false
+	dbContent.Users[userId] = user
+
+	err = db.writeDB(dbContent)
+	if err != nil {
+		return false
+	}
+
+	return true
+}
+
 func (db *DB) GetUserByEmail(email string) (models.User, error) {
 	dbContent, err := db.loadDB()
 	if err != nil {

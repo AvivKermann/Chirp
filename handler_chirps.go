@@ -81,25 +81,19 @@ func (cfg *apiConfig) handlerDeleteChirp(w http.ResponseWriter, r *http.Request)
 	chirpId, err := strconv.Atoi(strChirpId)
 	token := database.StripPrefix(r.Header.Get("Authorization"))
 	if err != nil {
-		jsonResponse.ResponedWithError(w, http.StatusBadRequest, err.Error())
+		jsonResponse.ResponedWithError(w, http.StatusUnauthorized, err.Error())
 		return
-	}
-	chirp, exist := cfg.DB.GetSingleChirp(chirpId)
-
-	if !exist {
-		jsonResponse.ResponedWithError(w, http.StatusNotFound, "chirp dosent exist")
 	}
 
 	userId, err := jwtauth.GetIdFromToken(token, cfg.jwtSecret)
-
 	if err != nil {
 		jsonResponse.ResponedWithError(w, http.StatusBadRequest, "not a user")
 		return
 	}
-	_, err = jwtauth.GetIdFromToken(token, cfg.jwtSecret)
 
-	if err != nil {
-		jsonResponse.ResponedWithError(w, http.StatusUnauthorized, "unauthorized")
+	chirp, exist := cfg.DB.GetSingleChirp(chirpId)
+	if !exist {
+		jsonResponse.ResponedWithError(w, http.StatusBadRequest, "chirp dosent exist")
 		return
 	}
 
@@ -108,6 +102,7 @@ func (cfg *apiConfig) handlerDeleteChirp(w http.ResponseWriter, r *http.Request)
 		jsonResponse.ResponedWithError(w, http.StatusForbidden, "cannot delete chirp by other users")
 		return
 	}
+
 	isDeleted := cfg.DB.DeleteSingleChirp(chirpId)
 	if !isDeleted {
 		jsonResponse.ResponedWithError(w, http.StatusBadRequest, "chirp cannot be deleted")

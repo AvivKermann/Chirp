@@ -10,6 +10,7 @@ type User struct {
 	Password []byte `json:"password"`
 }
 type ResponseUser struct {
-	Email string `json:"email"`
-	ID    int    `json:"id"`
+	Email       string `json:"email"`
+	ID          int    `json:"id"`
+	IsChirpyRed bool   `json:"is_chirpy_red"`
 }

@@ -116,3 +116,33 @@ func (cfg *apiConfig) handlerUpdateUser(w http.ResponseWriter, r *http.Request) 
 	jsonResponse.ResponedWithJson(w, http.StatusOK, updatedUser)
 
 }
+func (cfg *apiConfig) handlerUserSubscribe(w http.ResponseWriter, r *http.Request) {
+	decoder := json.NewDecoder(r.Body)
+	params := models.WebhooksParameters{}
+	err := decoder.Decode(&params)
+	if err != nil {
+		jsonResponse.ResponedWithError(w, http.StatusBadRequest, "invalid request")
+		return
+	}
+
+	if event := params.Event; event != "user.upgraded" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	user, err := cfg.DB.GetUserById(params.Data.UserID)
+	if err != nil {
+		jsonResponse.ResponedWithError(w, http.StatusNotFound, "user not found")
+		return
+	}
+
+	upgraded := cfg.DB.MakeUserChirpyRed(user.ID)
+	if !upgraded {
+		jsonResponse.ResponedWithError(w, http.StatusInternalServerError, "something went wrong")
+		return
+	}
+	jsonResponse.ResponedWithJson(w, http.StatusOK, struct {
+		Body string `json:"body"`
+	}{
+		Body: "",
+	})
+}

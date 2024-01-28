@@ -56,6 +56,7 @@ func main() {
 	apiRouter.Post("/login", cfg.handlerLogin)
 	apiRouter.Post("/refresh", cfg.handlerRefresh)
 	apiRouter.Post("/revoke", cfg.handlerRevoke)
+	apiRouter.Post("/polka/webhooks", cfg.handlerUserSubscribe)
 	apiRouter.Put("/users", cfg.handlerUpdateUser)
 
 	adminRouter.Get("/metrics", cfg.handlerMetrics)
