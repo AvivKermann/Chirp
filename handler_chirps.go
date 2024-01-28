@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -51,6 +52,13 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request)
 
 func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, r *http.Request) {
 	strAuthorId := r.URL.Query().Get("author_id")
+	defaultOrderType := "asc"
+	orderType := r.URL.Query().Get("sort")
+
+	if orderType != "desc" {
+		orderType = defaultOrderType
+	}
+
 	if strAuthorId != "" {
 		authorId, err := strconv.Atoi(strAuthorId)
 		if err != nil {
@@ -62,9 +70,9 @@ func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, r *http.Request) {
 			jsonResponse.ResponedWithError(w, http.StatusBadRequest, "invalid id")
 			return
 		}
+		SortChirps(orderType, chirps)
 		jsonResponse.ResponedWithJson(w, http.StatusOK, chirps)
 		return
-
 	}
 
 	chrips, err := cfg.DB.GetChirps()
@@ -72,6 +80,7 @@ func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, r *http.Request) {
 		jsonResponse.ResponedWithError(w, http.StatusNotFound, err.Error())
 		return
 	}
+	SortChirps(orderType, chrips)
 	jsonResponse.ResponedWithJson(w, http.StatusOK, chrips)
 }
 
@@ -158,9 +167,25 @@ func validateChirp(chirp string) bool {
 }
 
 func isChirpAuthor(chirp models.Chirp, userId int) bool {
-	if userId == chirp.AuthorID {
-		return true
-	}
+	return userId == chirp.AuthorID
+}
 
-	return false
+func SortChirps(sortingType string, chirps []models.Chirp) {
+	if sortingType == "asc" {
+		sortChirpAsc(chirps)
+	} else if sortingType == "desc" {
+		sortChirpDesc(chirps)
+	}
+}
+
+func sortChirpAsc(chirps []models.Chirp) {
+	sort.Slice(chirps, func(i, j int) bool {
+		return chirps[i].ID < chirps[j].ID
+
+	})
+}
+func sortChirpDesc(chirps []models.Chirp) {
+	sort.Slice(chirps, func(i, j int) bool {
+		return chirps[i].ID > chirps[j].ID
+	})
 }
